@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "14901660455",
+    "firebase_url": "https://bookdb-bda77.firebaseio.com",
+    "project_id": "bookdb-bda77",
+    "storage_bucket": "bookdb-bda77.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:14901660455:android:f6dbdd17874e3aa44cb702",
+        "android_client_info": {
+          "package_name": "com.android.bookdb"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "14901660455-1ne3311om3ap4hfmnv1p0cc8ptpjhdvf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.android.bookdb",
+            "certificate_hash": "de380481531debef867d84bb41d0201cbab853dd"
+          }
+        },
+        {
+          "client_id": "14901660455-srfa95kekehq6uo4h6duk6570cp3bqsp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiERrEchH7dycPUlx15tpTXaA2FmBBCzI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "14901660455-srfa95kekehq6uo4h6duk6570cp3bqsp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
