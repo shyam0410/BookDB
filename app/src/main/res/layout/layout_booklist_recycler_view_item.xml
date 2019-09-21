@@ -17,7 +17,7 @@
             android:cropToPadding="false"
             android:padding="2.5dp"
             android:scaleType="fitXY"
-            android:src="@drawable/oscover" />
+            android:src="@drawable/book_cover_place_holder" />
 
         <TextView
             android:id="@+id/tvBookName"

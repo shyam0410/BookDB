@@ -41,7 +41,7 @@ public class BookListAdapter extends RecyclerView.Adapter<BookListAdapter.BookLi
         int pos = holder.getAdapterPosition();
         holder.tvBookName.setText(bookInfoList.get(pos).getName());
         holder.tvAuthorName.setText(bookInfoList.get(pos).getAuthor());
-        Picasso.with(activity).load(Uri.parse(bookInfoList.get(pos).getCoverPageUri())).placeholder(R.drawable.oscover).into(holder.ivCoverPage);
+        Picasso.with(activity).load(Uri.parse(bookInfoList.get(pos).getCoverPageUri())).placeholder(R.drawable.book_cover_place_holder).into(holder.ivCoverPage);
     }
 
     @Override

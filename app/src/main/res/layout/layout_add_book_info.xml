@@ -43,7 +43,7 @@
                 android:layout_margin="5dp"
                 android:contentDescription="@string/thumbnail"
                 android:scaleType="fitXY"
-                android:src="@drawable/oscover" />
+                android:src="@drawable/book_cover_place_holder" />
 
             <ImageView
                 android:layout_width="wrap_content"

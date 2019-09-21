@@ -183,7 +183,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
                 && data != null && data.getData() != null) {
             filepath = data.getData();
-            Picasso.with(this).load(filepath).placeholder(R.drawable.oscover).into(ivCoverPage);
+            Picasso.with(this).load(filepath).placeholder(R.drawable.book_cover_place_holder).into(ivCoverPage);
             bookInfoViewModel.saveMediaInDB(this, filepath);
         }
     }
