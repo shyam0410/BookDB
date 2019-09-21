@@ -1,23 +1,30 @@
 package com.android.bookdb.Database;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
 import com.android.bookdb.Listener.OnBookInfoAdded;
+import com.android.bookdb.Listener.OnMediaUploaded;
 import com.android.bookdb.Model.BookInformationModel;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class BookInfoRepository {
 
@@ -25,6 +32,9 @@ public class BookInfoRepository {
     public ArrayList<BookInformationModel> bookInfoList = new ArrayList<>();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private static OnBookInfoAdded infoAdded;
+    private static OnMediaUploaded mediaUploaded;
+    private FirebaseStorage storage = FirebaseStorage.getInstance();
+    private StorageReference storageReference;
 
     public static BookInfoRepository getRepositoryInstance(Context context) {
 
@@ -32,6 +42,7 @@ public class BookInfoRepository {
             instance = new BookInfoRepository();
         }
         infoAdded = (OnBookInfoAdded) context;
+        mediaUploaded = (OnMediaUploaded) context;
         return instance;
     }
 
@@ -57,6 +68,32 @@ public class BookInfoRepository {
                 Log.d("my", "OnFailure2" + e);
             }
         });
+    }
+
+    public void saveMediaInDB(Uri filepath) {
+        storageReference = storage.getReference();
+
+        final StorageReference ref = storageReference.child("images/" + UUID.randomUUID().toString());
+        ref.putFile(filepath)
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                Log.d("my", "OnSuccess3");
+                                mediaUploaded.uploaded(uri);
+                            }
+                        });
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d("my", "OnFailure3" + e);
+                    }
+                });
+
     }
 
     private void getBookInfoFromDb() {

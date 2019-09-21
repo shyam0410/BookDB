@@ -10,41 +10,42 @@
 
         <ImageView
             android:id="@+id/ivCoverPage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="300dp"
+            android:layout_height="250dp"
             android:adjustViewBounds="true"
-            android:cropToPadding="false"
-            android:src="@drawable/oscover"
             android:contentDescription="@string/thumbnail"
+            android:cropToPadding="false"
             android:padding="2.5dp"
-            android:scaleType="fitXY"/>
+            android:scaleType="fitXY"
+            android:src="@drawable/oscover" />
+
         <TextView
             android:id="@+id/tvBookName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/ivCoverPage"
-            android:text="@string/operating_system"
             android:lineSpacingExtra="0dp"
             android:paddingStart="5dp"
             android:paddingLeft="5dp"
-            android:paddingEnd="5dp"
             android:paddingTop="2dp"
+            android:paddingEnd="5dp"
             android:paddingBottom="2dp"
-            android:textSize="16sp"
-            android:textColor="@color/colorBlack"/>
+            android:text="@string/operating_system"
+            android:textColor="@color/colorBlack"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tvAuthorName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/tvBookName"
-            android:text="@string/peter_baer_galvin"
             android:paddingStart="5dp"
             android:paddingLeft="5dp"
-            android:paddingEnd="5dp"
             android:paddingTop="2dp"
+            android:paddingEnd="5dp"
             android:paddingBottom="5dp"
-            android:textSize="12sp"/>
+            android:text="@string/peter_baer_galvin"
+            android:textSize="12sp" />
 
     </RelativeLayout>
 

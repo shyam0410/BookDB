@@ -1,34 +1,58 @@
 package com.android.bookdb;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Activity;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.android.bookdb.Adapter.BookListAdapter;
-import com.android.bookdb.Listener.DialogDataListener;
 import com.android.bookdb.Listener.OnBookInfoAdded;
+import com.android.bookdb.Listener.OnMediaUploaded;
 import com.android.bookdb.Model.BookInformationModel;
-import com.android.bookdb.R;
-import com.android.bookdb.Utils.Utilities;
 import com.android.bookdb.ViewModel.BookInfoViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.FirebaseApp;
+import com.squareup.picasso.Picasso;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HomeActivity extends AppCompatActivity implements View.OnClickListener, OnBookInfoAdded {
+public class HomeActivity extends AppCompatActivity implements View.OnClickListener, OnBookInfoAdded, OnMediaUploaded {
 
     private FloatingActionButton fabAdd;
     private ArrayList<BookInformationModel> bookInfoList;
     private BookListAdapter bookListAdapter;
     private RecyclerView rvBookList;
+    private ImageView ivCoverPage;
+    private EditText tieName, tieAuthor;
     private BookInfoViewModel bookInfoViewModel;
+    private androidx.appcompat.app.AlertDialog.Builder dialogBuilder;
+    private final int PICK_IMAGE_REQUEST = 70;
+    private Uri filepath;
+    private Map<String, Object> bookInfo;
+    private BookInformationModel bookInformationModel;
+    private AlertDialog dialog;
+    private boolean isImageUploaded = false;
+    private Uri coverPageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,10 +75,11 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2, RecyclerView.VERTICAL, false);
         rvBookList.setLayoutManager(gridLayoutManager);
+        bookListAdapter.notifyDataSetChanged();
         fabAdd.setOnClickListener(this);
-        rvBookList.addOnScrollListener(new RecyclerView.OnScrollListener(){
+        rvBookList.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy){
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 if (dy > 0) {
                     fabAdd.hide();
                     return;
@@ -69,25 +94,103 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.fabAdd) {
-            Utilities.createDialog(this, "Cancel", "Okay", new DialogDataListener() {
-                @Override
-                public void getData(String bookName, String authorName) {
-                    BookInformationModel bookInformationModel = new BookInformationModel();
-                    bookInformationModel.setName(bookName);
-                    bookInformationModel.setAuthor(authorName);
-                    bookInfoList.add(bookInformationModel);
-
-                    Map<String, Object> bookInfo = new HashMap<>();
-                    bookInfo.put("name", bookName);
-                    bookInfo.put("author", authorName);
-                    bookInfoViewModel.setBookInfo(HomeActivity.this, bookInfo);
-                }
-            });
+            createDialog();
         }
     }
 
     @Override
     public void bookInfoAdded() {
         bookListAdapter.notifyDataSetChanged();
+    }
+
+    public void createDialog() {
+        dialogBuilder = new androidx.appcompat.app.AlertDialog.Builder(this);
+
+        LayoutInflater layoutInflater = this.getLayoutInflater();
+        final View alertLayout = layoutInflater.inflate(R.layout.layout_add_book_info, null);
+        tieName = alertLayout.findViewById(R.id.tieName);
+        tieAuthor = alertLayout.findViewById(R.id.tieAuthor);
+        final FrameLayout flCoverPage = alertLayout.findViewById(R.id.flCoverPage);
+        ivCoverPage = alertLayout.findViewById(R.id.ivCoverPage);
+        bookInfo = new HashMap<>();
+        bookInformationModel = new BookInformationModel();
+
+        dialogBuilder.setView(alertLayout);
+        dialogBuilder.setCancelable(false);
+        dialogBuilder.setPositiveButton("Okay", null);
+        dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        flCoverPage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
+            }
+        });
+
+
+        dialog = dialogBuilder.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialogInterface) {
+                Button btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                btn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (tieName.getText().toString().trim().isEmpty()) {
+                            tieName.setError(getResources().getString(R.string.required_field));
+                        }
+
+                        if (tieAuthor.getText().toString().trim().isEmpty()) {
+                            tieAuthor.setError(getResources().getString(R.string.required_field));
+                        }
+
+                        if (isImageUploaded) {
+                            if (!tieName.getText().toString().trim().isEmpty() && !tieAuthor.getText().toString().trim().isEmpty()) {
+                                dialog.dismiss();
+                                bookInformationModel.setName(tieName.getText().toString().trim());
+                                bookInformationModel.setAuthor(tieAuthor.getText().toString().trim());
+                                bookInformationModel.setCoverPageUri(coverPageUri.toString());
+                                bookInfoList.add(bookInformationModel);
+
+                                bookInfo.put("name", tieName.getText().toString().trim());
+                                bookInfo.put("author", tieAuthor.getText().toString().trim());
+                                bookInfo.put("coverPageUri", coverPageUri.toString());
+                                bookInfoViewModel.setBookInfo(HomeActivity.this, bookInfo);
+                            }
+                        } else {
+                            Toast.makeText(HomeActivity.this, "Please upload the cover page first.", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+                });
+            }
+        });
+
+        dialog.show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
+                && data != null && data.getData() != null) {
+            filepath = data.getData();
+            Picasso.with(this).load(filepath).placeholder(R.drawable.oscover).into(ivCoverPage);
+            bookInfoViewModel.saveMediaInDB(this, filepath);
+        }
+    }
+
+    @Override
+    public void uploaded(Uri imageUri) {
+        isImageUploaded = true;
+        coverPageUri = imageUri;
     }
 }

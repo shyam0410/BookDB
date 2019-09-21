@@ -2,6 +2,7 @@ package com.android.bookdb.ViewModel;
 
 import android.app.Application;
 import android.content.Context;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -30,6 +31,10 @@ public class BookInfoViewModel extends AndroidViewModel {
     }
 
     public void setBookInfo(Context context, Object bookInfo) {
-       BookInfoRepository.getRepositoryInstance(context).setBookInfo(bookInfo);
+        BookInfoRepository.getRepositoryInstance(context).setBookInfo(bookInfo);
+    }
+
+    public void saveMediaInDB(Context context, Uri filepath) {
+        BookInfoRepository.getRepositoryInstance(context).saveMediaInDB(filepath);
     }
 }
