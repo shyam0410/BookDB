@@ -3,6 +3,7 @@ package com.android.bookdb;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,20 +24,17 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.android.bookdb.Adapter.BookListAdapter;
-import com.android.bookdb.Listener.OnBookInfoAdded;
-import com.android.bookdb.Listener.OnMediaUploaded;
 import com.android.bookdb.Model.BookInformationModel;
 import com.android.bookdb.ViewModel.BookInfoViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.FirebaseApp;
 import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HomeActivity extends AppCompatActivity implements View.OnClickListener, OnBookInfoAdded, OnMediaUploaded {
+public class HomeActivity extends AppCompatActivity implements View.OnClickListener {
 
     private FloatingActionButton fabAdd;
     private ArrayList<BookInformationModel> bookInfoList;
@@ -62,7 +60,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         fabAdd = findViewById(R.id.fabAdd);
         rvBookList = findViewById(R.id.rvBookList);
         bookInfoViewModel = ViewModelProviders.of(this).get(BookInfoViewModel.class);
-        bookInfoViewModel.init(this);
+        bookInfoViewModel.init();
         bookInfoList = new ArrayList<>();
         initViews();
     }
@@ -75,7 +73,14 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2, RecyclerView.VERTICAL, false);
         rvBookList.setLayoutManager(gridLayoutManager);
-        bookListAdapter.notifyDataSetChanged();
+        bookInfoViewModel.getIsBookInfoFetched().observe(this, new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean isBookInfoFetched) {
+                if (isBookInfoFetched) {
+                    bookListAdapter.notifyDataSetChanged();
+                }
+            }
+        });
         fabAdd.setOnClickListener(this);
         rvBookList.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -98,10 +103,6 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    @Override
-    public void bookInfoAdded() {
-        bookListAdapter.notifyDataSetChanged();
-    }
 
     public void createDialog() {
         dialogBuilder = new androidx.appcompat.app.AlertDialog.Builder(this);
@@ -163,7 +164,13 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                                 bookInfo.put("name", tieName.getText().toString().trim());
                                 bookInfo.put("author", tieAuthor.getText().toString().trim());
                                 bookInfo.put("coverPageUri", coverPageUri.toString());
-                                bookInfoViewModel.setBookInfo(HomeActivity.this, bookInfo);
+                                bookInfoViewModel.setBookInfo(bookInfo);
+                                bookInfoViewModel.getIsBookInfoUploaded().observe(HomeActivity.this, new Observer<Boolean>() {
+                                    @Override
+                                    public void onChanged(Boolean aBoolean) {
+                                        bookListAdapter.notifyDataSetChanged();
+                                    }
+                                });
                             }
                         } else {
                             Toast.makeText(HomeActivity.this, "Please upload the cover page first.", Toast.LENGTH_SHORT).show();
@@ -184,13 +191,15 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 && data != null && data.getData() != null) {
             filepath = data.getData();
             Picasso.with(this).load(filepath).placeholder(R.drawable.book_cover_place_holder).into(ivCoverPage);
-            bookInfoViewModel.saveMediaInDB(this, filepath);
+            bookInfoViewModel.saveMediaInDB(filepath);
+            bookInfoViewModel.getIsBookMediaUploaded().observe(this, new Observer<Uri>() {
+                @Override
+                public void onChanged(Uri uri) {
+                    isImageUploaded = true;
+                    coverPageUri = uri;
+                }
+            });
         }
     }
 
-    @Override
-    public void uploaded(Uri imageUri) {
-        isImageUploaded = true;
-        coverPageUri = imageUri;
-    }
 }

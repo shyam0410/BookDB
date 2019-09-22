@@ -7,13 +7,10 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
-import com.android.bookdb.Listener.OnBookInfoAdded;
-import com.android.bookdb.Listener.OnMediaUploaded;
 import com.android.bookdb.Model.BookInformationModel;
+import com.android.bookdb.ViewModel.BookInfoViewModel;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -28,22 +25,15 @@ import java.util.UUID;
 
 public class BookInfoRepository {
 
-    private static BookInfoRepository instance;
     public ArrayList<BookInformationModel> bookInfoList = new ArrayList<>();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private static OnBookInfoAdded infoAdded;
-    private static OnMediaUploaded mediaUploaded;
     private FirebaseStorage storage = FirebaseStorage.getInstance();
     private StorageReference storageReference;
+    private BookInfoViewModel bookInfoViewModel;
 
-    public static BookInfoRepository getRepositoryInstance(Context context) {
+    public BookInfoRepository(BookInfoViewModel bookInfoViewModel) {
 
-        if (instance == null) {
-            instance = new BookInfoRepository();
-        }
-        infoAdded = (OnBookInfoAdded) context;
-        mediaUploaded = (OnMediaUploaded) context;
-        return instance;
+        this.bookInfoViewModel = bookInfoViewModel;
     }
 
     public MutableLiveData<ArrayList<BookInformationModel>> getBookInfo() {
@@ -60,7 +50,7 @@ public class BookInfoRepository {
             @Override
             public void onSuccess(DocumentReference documentReference) {
                 Log.d("my", "OnSuccess2:bookInfoAdded");
-                infoAdded.bookInfoAdded();
+                bookInfoViewModel.setIsBookInfoUploaded(true);
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -82,7 +72,7 @@ public class BookInfoRepository {
                             @Override
                             public void onSuccess(Uri uri) {
                                 Log.d("my", "OnSuccess3");
-                                mediaUploaded.uploaded(uri);
+                                bookInfoViewModel.setIsBookMediaUploaded(uri);
                             }
                         });
                     }
@@ -111,7 +101,7 @@ public class BookInfoRepository {
                     }
 
                     Log.d("my", "OnSuccess:bookInfoAdded1");
-                    infoAdded.bookInfoAdded();
+                    bookInfoViewModel.setIsBookInfoFetched(true);
                 }
 
             }
