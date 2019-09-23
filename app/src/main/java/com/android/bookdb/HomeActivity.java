@@ -8,15 +8,15 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.Activity;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -49,7 +49,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     private Map<String, Object> bookInfo;
     private BookInformationModel bookInformationModel;
     private AlertDialog dialog;
-    private boolean isImageUploaded = false;
+    private Dialog mDialog;
     private Uri coverPageUri;
 
     @Override
@@ -153,27 +153,45 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                             tieAuthor.setError(getResources().getString(R.string.required_field));
                         }
 
-                        if (isImageUploaded) {
+                        if (filepath !=null) {
                             if (!tieName.getText().toString().trim().isEmpty() && !tieAuthor.getText().toString().trim().isEmpty()) {
                                 dialog.dismiss();
-                                bookInformationModel.setName(tieName.getText().toString().trim());
-                                bookInformationModel.setAuthor(tieAuthor.getText().toString().trim());
-                                bookInformationModel.setCoverPageUri(coverPageUri.toString());
-                                bookInfoList.add(bookInformationModel);
 
-                                bookInfo.put("name", tieName.getText().toString().trim());
-                                bookInfo.put("author", tieAuthor.getText().toString().trim());
-                                bookInfo.put("coverPageUri", coverPageUri.toString());
-                                bookInfoViewModel.setBookInfo(bookInfo);
+                                showCustomProgressDialog();
+                                bookInfoViewModel.saveMediaInDB(filepath);
+                                bookInfoViewModel.getIsBookMediaUploaded().observe(HomeActivity.this, new Observer<Uri>() {
+                                    @Override
+                                    public void onChanged(Uri uri) {
+                                        if(uri != null) {
+                                            coverPageUri = uri;
+                                            bookInfo.put("name", tieName.getText().toString().trim());
+                                            bookInfo.put("author", tieAuthor.getText().toString().trim());
+                                            bookInfo.put("coverPageUri", coverPageUri.toString());
+                                            bookInfoViewModel.setBookInfo(bookInfo);
+                                            bookInfoViewModel.setIsBookMediaUploaded(null);
+                                        }
+                                    }
+                                });
+
+
                                 bookInfoViewModel.getIsBookInfoUploaded().observe(HomeActivity.this, new Observer<Boolean>() {
                                     @Override
-                                    public void onChanged(Boolean aBoolean) {
-                                        bookListAdapter.notifyDataSetChanged();
+                                    public void onChanged(Boolean isBookInfoUploaded) {
+                                        if(isBookInfoUploaded) {
+                                            bookInfoViewModel.setIsBookInfoUploaded(false);
+                                            bookInformationModel.setName(tieName.getText().toString().trim());
+                                            bookInformationModel.setAuthor(tieAuthor.getText().toString().trim());
+                                            bookInformationModel.setCoverPageUri(coverPageUri.toString());
+                                            bookInfoList.add(bookInformationModel);
+                                            bookListAdapter.notifyDataSetChanged();
+                                            hideCustomProgressDialog();
+                                        }
                                     }
                                 });
                             }
                         } else {
-                            Toast.makeText(HomeActivity.this, "Please upload the cover page first.", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                            Toast.makeText(HomeActivity.this, "Something went wrong. Please try again.", Toast.LENGTH_SHORT).show();
                         }
 
                     }
@@ -191,14 +209,26 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 && data != null && data.getData() != null) {
             filepath = data.getData();
             Picasso.with(this).load(filepath).placeholder(R.drawable.book_cover_place_holder).into(ivCoverPage);
-            bookInfoViewModel.saveMediaInDB(filepath);
-            bookInfoViewModel.getIsBookMediaUploaded().observe(this, new Observer<Uri>() {
-                @Override
-                public void onChanged(Uri uri) {
-                    isImageUploaded = true;
-                    coverPageUri = uri;
-                }
-            });
+        }
+    }
+
+    private void showCustomProgressDialog() {
+        if (mDialog != null && mDialog.isShowing())
+            return;
+        mDialog = new Dialog(this);
+        mDialog.getWindow().setContentView(R.layout.layout_custom_progress);
+        mDialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        mDialog.getWindow().setGravity(Gravity.CENTER);
+        mDialog.getWindow().setBackgroundDrawable(getResources().getDrawable(R.color.colorTransparent));
+        /*mDialog.setMessage(context.getResources().getString(messageResource));*/
+        mDialog.setCanceledOnTouchOutside(false);
+        mDialog.setCancelable(false);
+        mDialog.show();
+    }
+
+    private void hideCustomProgressDialog() {
+        if (mDialog != null && mDialog.isShowing()) {
+            mDialog.dismiss();
         }
     }
 
